@@ -1,5 +1,12 @@
-const express = require('express'); 
-const app = express(); 
-app.get('/', (req, res) =
-  res.send('Hello World from Node.js running in Docker!'); 
-}); 
+const express = require('express');
+const app = express();
+
+const PORT = process.env.PORT || 8080;  // Use Cloud Run's provided port
+
+app.get('/', (req, res) => {
+  res.send('Hello World from Node.js on GCP!');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
