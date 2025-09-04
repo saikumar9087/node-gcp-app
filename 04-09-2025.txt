@@ -1,0 +1,373 @@
+Complete CI/CD Pipeline Steps from Scratch - Jenkins to Cloud Run
+
+---
+
+1️⃣ Create Node.js App Locally
+
+* Files to create:
+
+  1. app.js – Simple Express app
+  2. Dockerfile – Using Alpine Linux
+* Checkpoints:
+
+  * Ensure app runs locally with `node app.js`.
+  * Test in browser or `curl http://localhost:8080`.
+
+---
+
+2️⃣ Push Code to GitHub
+
+Pushing files to GitHub repo from local machine
+
+git init
+git add origin repo_url.git
+git add .
+git commit -m "commit msg"
+git branch -M main
+git push -u origin main
+
+
+
+To add new files in the existing repo
+
+git status -> to track for new changes
+git add new_file
+git commit -m "new file commit"
+git push origin main
+
+
+
+---
+
+3️⃣ Create GCP Service Account for Jenkins
+
+* IAM & Admin → Service Accounts → Create `jenkins-developer`.
+* Roles: Artifact Registry Admin, Cloud Run Admin, Storage Admin.
+* Download JSON key.
+* Checkpoint: JSON key downloaded and securely stored.
+
+---
+
+4️⃣ Prepare Jenkins VM in GCP
+
+* Install Docker, git, curl.
+* Install gcloud CLI.
+* Place service account key on Jenkins VM:
+  sudo mkdir -p /var/lib/jenkins/gcp
+  sudo mv \~/key.json /var/lib/jenkins/gcp/key.json
+  sudo chown jenkins\:jenkins /var/lib/jenkins/gcp/key.json
+* Checkpoints:
+
+  * docker, gcloud commands work.
+  * Jenkins user can access key.json.
+
+---
+
+5️⃣ Configure Jenkins
+
+* Create Pipeline → Pipeline script from SCM → GitHub repo.
+* Checkpoints:
+
+  * agent any in Jenkinsfile.
+  * GitHub URL is correct and accessible.
+  * Docker installed, gcloud installed, shell commands executable.
+
+---
+
+6️⃣ Jenkinsfile / Pipeline Script
+
+* Stages: Checkout, Authenticate, Configure Docker, Build, Push, Deploy.
+* Environment variables: PROJECT\_ID, ARTIFACT\_REGION, RUN\_REGION, IMAGE, REPO, GOOGLE\_APPLICATION\_CREDENTIALS.
+* Checkpoints:
+
+  * Dockerfile exists.
+  * \$BUILD\_NUMBER used for unique image tag.
+
+---
+
+7️⃣ Run Jenkins Pipeline
+
+* Trigger Build Now.
+* Monitor stages: Checkout → Build → Push → Deploy.
+* Checkpoints:
+
+  * If deployment fails, check logs for PORT mismatch or missing permissions.
+
+---
+
+8️⃣ Post-Deployment
+
+* Visit Cloud Run URL.
+* Check Artifact Registry for image tag.
+* Monitor Cloud Run logs.
+
+---
+
+9️⃣ Future Reference / Best Practices
+
+* Use \$BUILD\_NUMBER for Docker tags.
+* Keep service account key secure.
+* Ensure regions are correctly set.
+* Pre-flight checks before pipeline.
+* Enable required GCP APIs: Cloud Run, Artifact Registry, Cloud Resource Manager.
+
+---
+
+
+
+Jenkins CI/CD Pipeline -Checklist
+
+---
+
+1️⃣ Local/Repo Check
+
+* Node.js app (app.js) exists and works locally.
+
+  * Test with: node app.js → visit [http://localhost:8080](http://localhost:8080).
+* Dockerfile exists and configured properly:
+
+  * Uses process.env.PORT for Cloud Run.
+  * Base image matches Node.js version.
+* GitHub repo contains latest code.
+
+  * git status → all files committed.
+  * Branch: main (or the branch used in Jenkinsfile).
+
+---
+
+2️⃣ Jenkins VM Check
+
+* Docker installed: docker --version
+* gcloud CLI installed: gcloud version
+* Git installed and accessible: git --version
+* Jenkins user has access to:
+
+  * Docker commands
+  * gcloud commands
+  * /var/lib/jenkins/gcp/key.json
+
+---
+
+3️⃣ GCP Pre-Requisites
+
+* Service Account created with roles:
+
+  * Artifact Registry Admin
+  * Cloud Run Admin
+  * Storage Admin (if needed)
+* JSON key downloaded and uploaded to Jenkins VM:
+  sudo mkdir -p /var/lib/jenkins/gcp
+  sudo mv \~/key.json /var/lib/jenkins/gcp/key.json
+  sudo chown jenkins\:jenkins /var/lib/jenkins/gcp/key.json
+* Required APIs enabled:
+
+  * Cloud Run API
+  * Artifact Registry API
+  * Cloud Resource Manager API
+
+---
+
+4️⃣ Jenkinsfile / Pipeline Check
+
+* agent any or appropriate node configured.
+* Environment variables set:
+  PROJECT\_ID
+  ARTIFACT\_REGION
+  RUN\_REGION
+  IMAGE
+  REPO
+  GOOGLE\_APPLICATION\_CREDENTIALS
+* GitHub URL and branch are correct.
+* Docker image tag uses \$BUILD\_NUMBER (unique builds).
+* sh commands properly formatted and paths exist.
+
+---
+
+5️⃣ Artifact Registry Check
+
+* Artifact Registry repository exists.
+* Region matches ARTIFACT\_REGION in Jenkinsfile.
+* Permissions allow Jenkins service account to push images.
+
+---
+
+6️⃣ Cloud Run Check
+
+* Cloud Run service exists or will be created by pipeline.
+* Region matches RUN\_REGION in Jenkinsfile.
+* Application listens on \$PORT environment variable.
+* Allow unauthenticated access (if needed).
+
+---
+
+7️⃣ Optional: Test Commands on Jenkins VM
+
+* Authenticate manually:
+  gcloud auth activate-service-account --key-file=/var/lib/jenkins/gcp/key.json
+  gcloud config set project \<PROJECT\_ID>
+* Test Docker build:
+  docker build -t test-image .
+* Test Docker push (dry-run):
+  docker tag test-image asia-south1-docker.pkg.dev/\<PROJECT\_ID>/<REPO>/test-image:1
+  docker push asia-south1-docker.pkg.dev/\<PROJECT\_ID>/<REPO>/test-image:1
+
+---
+
+
+
+Complete CI/CD Pipeline Steps from Scratch - Commands
+
+
+---
+
+1️⃣ Create Node.js App Locally
+
+* Files to create:
+
+  1. app.js – Simple Express app
+  2. Dockerfile – Using Alpine Linux
+* Checkpoints:
+
+  * Ensure app runs locally with `node app.js`.
+  * Test in browser or `curl http://localhost:8080`.
+
+**Shell Commands:**
+
+```bash
+mkdir node-app
+cd node-app
+nano app.js   # or touch app.js
+nano Dockerfile  # or touch Dockerfile
+node app.js
+curl http://localhost:8080
+```
+
+---
+
+2️⃣ Push Code to GitHub
+
+```bash
+git init
+git add app.js Dockerfile
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin <your-repo-url>
+git push -u origin main
+```
+
+---
+
+3️⃣ Create GCP Service Account and JSON Key
+
+* Create service account in GCP console.
+* Download JSON key.
+* Upload to Jenkins VM:
+
+```bash
+sudo mkdir -p /var/lib/jenkins/gcp
+sudo mv ~/Downloads/gcp-devops-470417-be0cd6aae129.json /var/lib/jenkins/gcp/key.json
+sudo chown jenkins:jenkins /var/lib/jenkins/gcp/key.json
+```
+
+---
+
+4️⃣ Prepare Jenkins VM
+
+```bash
+# Install Docker
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# Install git
+sudo apt install -y git
+
+# Install gcloud CLI
+curl -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-XYZ.tar.gz
+tar zxvf google-cloud-sdk-XYZ.tar.gz
+./google-cloud-sdk/install.sh
+source ~/.bashrc
+```
+
+---
+
+5️⃣ Configure Jenkins Pipeline
+
+* Create pipeline in Jenkins UI pointing to GitHub repo with Jenkinsfile.
+* Shell commands inside Jenkinsfile will execute as part of stages.
+
+---
+
+6️⃣ Jenkinsfile Commands (Executed in Shell)
+
+```bash
+# Authenticate to GCP
+gcloud auth activate-service-account --key-file=/var/lib/jenkins/gcp/key.json
+gcloud config set project <PROJECT_ID>
+
+# Configure Docker for Artifact Registry
+gcloud auth configure-docker <REGION>-docker.pkg.dev -q
+
+# Build Docker image
+docker build -t <REGION>-docker.pkg.dev/<PROJECT_ID>/<REPO>/<IMAGE>:$BUILD_NUMBER .
+
+# Push Docker image
+docker push <REGION>-docker.pkg.dev/<PROJECT_ID>/<REPO>/<IMAGE>:$BUILD_NUMBER
+
+# Deploy to Cloud Run
+gcloud run deploy <IMAGE> \
+  --image=<REGION>-docker.pkg.dev/<PROJECT_ID>/<REPO>/<IMAGE>:$BUILD_NUMBER \
+  --platform=managed \
+  --region=<RUN_REGION> \
+  --allow-unauthenticated
+```
+
+---
+
+7️⃣ Optional: Test Shell Commands on Jenkins VM
+
+```bash
+# Authenticate manually
+gcloud auth activate-service-account --key-file=/var/lib/jenkins/gcp/key.json
+gcloud config set project <PROJECT_ID>
+
+# Test Docker build
+docker build -t test-image .
+
+# Test Docker push (dry-run)
+docker tag test-image <REGION>-docker.pkg.dev/<PROJECT_ID>/<REPO>/test-image:1
+docker push <REGION>-docker.pkg.dev/<PROJECT_ID>/<REPO>/test-image:1
+```
+
+---
+
+8️⃣ Post-Deployment Checks
+
+```bash
+# Check Cloud Run service
+gcloud run services list --platform=managed --region=<RUN_REGION>
+
+# View logs
+gcloud logs read --project=<PROJECT_ID> --resource-type=cloud_run_revision
+```
+
+---
+
+9️⃣ Future Reference / Best Practices
+
+* Use \$BUILD\_NUMBER for Docker tags.
+* Keep service account key secure.
+* Ensure regions are correctly set.
+* Pre-flight checks before pipeline.
+* Enable required GCP APIs: Cloud Run, Artifact Registry, Cloud Resource Manager.
+
+---
+
+Jenkins CI/CD Pipeline - Pre-Flight Checklist
+(Refer to the checklist for detailed items before running the pipeline)
+
+
+
+
+
