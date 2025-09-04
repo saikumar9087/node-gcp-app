@@ -18,14 +18,12 @@ pipeline {
         }
 
         stage('Authenticate to GCP') {
-            steps {
-                sh '''
-                    # Check which account Jenkins VM is using
-                    gcloud auth list
-                    gcloud config set project $PROJECT_ID
-                '''
-            }
-        }
+    steps {
+        sh 'gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS'
+        sh 'gcloud config set project gcp-devops-470417'
+    }
+}
+
 
         stage('Configure Docker for Artifact Registry') {
             steps {
